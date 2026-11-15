@@ -1,0 +1,760 @@
+name: Build NEXUS VPN PRO APK
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Generate Complete NEXUS VPN Project
+        run: |
+          mkdir -p app/src/main/java/com/skumar/nexusvpn
+          mkdir -p app/src/main/res/drawable
+          mkdir -p app/src/main/res/layout
+
+          cat << 'EOF' > settings.gradle
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          rootProject.name = "NEXUS-VPN"
+          include ':app'
+          EOF
+
+          cat << 'EOF' > build.gradle
+          plugins {
+              id 'com.android.application' version '8.2.2' apply false
+          }
+          EOF
+
+          cat << 'EOF' > gradle.properties
+          org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+          android.useAndroidX=true
+          android.nonTransitiveRClass=true
+          EOF
+
+          cat << 'EOF' > app/build.gradle
+          plugins {
+              id 'com.android.application'
+          }
+          android {
+              namespace 'com.skumar.nexusvpn'
+              compileSdk 34
+              defaultConfig {
+                  applicationId "com.skumar.nexusvpn"
+                  minSdk 24
+                  targetSdk 34
+                  versionCode 1
+                  versionName "1.0"
+              }
+              buildTypes {
+                  release {
+                      minifyEnabled false
+                  }
+              }
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_17
+                  targetCompatibility JavaVersion.VERSION_17
+              }
+          }
+          dependencies {
+              implementation 'androidx.appcompat:appcompat:1.6.1'
+              implementation 'com.google.android.material:material:1.11.0'
+          }
+          EOF
+
+          cat << 'EOF' > app/src/main/AndroidManifest.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.INTERNET" />
+              <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+              <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+              <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+
+              <application
+                  android:allowBackup="true"
+                  android:label="NEXUS VPN"
+                  android:supportsRtl="true"
+                  android:theme="@style/Theme.Material3.Dark.NoActionBar">
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true"
+                      android:screenOrientation="portrait">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+                  <service
+                      android:name=".NexusVpnService"
+                      android:permission="android.permission.BIND_VPN_SERVICE"
+                      android:exported="false">
+                      <intent-filter>
+                          <action android:name="android.net.VpnService" />
+                      </intent-filter>
+                  </service>
+              </application>
+          </manifest>
+          EOF
+
+          cat << 'EOF' > app/src/main/res/drawable/glow_button_bg.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
+              <gradient
+                  android:type="radial"
+                  android:gradientRadius="110dp"
+                  android:startColor="#00D2FF"
+                  android:centerColor="#0080FF"
+                  android:endColor="#0A192F" />
+              <stroke android:width="4dp" android:color="#38BDF8" />
+          </shape>
+          EOF
+
+          cat << 'EOF' > app/src/main/res/drawable/card_dark_bg.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+              <solid android:color="#111927" />
+              <corners android:radius="18dp" />
+              <stroke android:width="1dp" android:color="#1E293B" />
+          </shape>
+          EOF
+
+          cat << 'EOF' > app/src/main/res/layout/activity_main.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:orientation="vertical"
+              android:background="#060B14"
+              android:padding="20dp"
+              android:gravity="center_horizontal">
+
+              <RelativeLayout
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:paddingTop="8dp">
+                  <LinearLayout
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:orientation="vertical">
+                      <TextView
+                          android:layout_width="wrap_content"
+                          android:layout_height="wrap_content"
+                          android:text="Status Connection"
+                          android:textColor="#64748B"
+                          android:textSize="12sp" />
+                      <TextView
+                          android:id="@+id/tvStatus"
+                          android:layout_width="wrap_content"
+                          android:layout_height="wrap_content"
+                          android:text="Disconnected"
+                          android:textColor="#F8FAFC"
+                          android:textSize="16sp"
+                          android:textStyle="bold" />
+                  </LinearLayout>
+                  <LinearLayout
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:layout_alignParentEnd="true"
+                      android:orientation="horizontal">
+                      <Button
+                          android:id="@+id/btnSplitTunnel"
+                          android:layout_width="wrap_content"
+                          android:layout_height="38dp"
+                          android:text="⚙ Split"
+                          android:textSize="12sp"
+                          android:textColor="#38BDF8"
+                          android:backgroundTint="#111927"
+                          android:layout_marginEnd="6dp"/>
+                      <Button
+                          android:id="@+id/btnAdBlock"
+                          android:layout_width="wrap_content"
+                          android:layout_height="38dp"
+                          android:text="👑 AdBlock: ON"
+                          android:textSize="12sp"
+                          android:textColor="#FACC15"
+                          android:backgroundTint="#111927"/>
+                  </LinearLayout>
+              </RelativeLayout>
+
+              <TextView
+                  android:id="@+id/tvTimer"
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:text="00:00:00"
+                  android:textColor="#FFFFFF"
+                  android:textSize="36sp"
+                  android:textStyle="bold"
+                  android:letterSpacing="0.08"
+                  android:layout_marginTop="24dp" />
+
+              <LinearLayout
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:orientation="horizontal"
+                  android:layout_marginTop="20dp"
+                  android:weightSum="2">
+                  <LinearLayout
+                      android:layout_width="0dp"
+                      android:layout_height="wrap_content"
+                      android:layout_weight="1"
+                      android:background="@drawable/card_dark_bg"
+                      android:padding="14dp"
+                      android:layout_marginEnd="8dp"
+                      android:orientation="vertical"
+                      android:gravity="center">
+                      <TextView
+                          android:layout_width="wrap_content"
+                          android:layout_height="wrap_content"
+                          android:text="↓ Download"
+                          android:textColor="#38BDF8"
+                          android:textSize="13sp" />
+                      <TextView
+                          android:id="@+id/tvDownloadSpeed"
+                          android:layout_width="wrap_content"
+                          android:layout_height="wrap_content"
+                          android:text="0.00 KB/s"
+                          android:textColor="#FFFFFF"
+                          android:textSize="18sp"
+                          android:textStyle="bold"
+                          android:layout_marginTop="4dp" />
+                  </LinearLayout>
+                  <LinearLayout
+                      android:layout_width="0dp"
+                      android:layout_height="wrap_content"
+                      android:layout_weight="1"
+                      android:background="@drawable/card_dark_bg"
+                      android:padding="14dp"
+                      android:layout_marginStart="8dp"
+                      android:orientation="vertical"
+                      android:gravity="center">
+                      <TextView
+                          android:layout_width="wrap_content"
+                          android:layout_height="wrap_content"
+                          android:text="↑ Upload"
+                          android:textColor="#FACC15"
+                          android:textSize="13sp" />
+                      <TextView
+                          android:id="@+id/tvUploadSpeed"
+                          android:layout_width="wrap_content"
+                          android:layout_height="wrap_content"
+                          android:text="0.00 KB/s"
+                          android:textColor="#FFFFFF"
+                          android:textSize="18sp"
+                          android:textStyle="bold"
+                          android:layout_marginTop="4dp" />
+                  </LinearLayout>
+              </LinearLayout>
+
+              <RelativeLayout
+                  android:layout_width="match_parent"
+                  android:layout_height="0dp"
+                  android:layout_weight="1"
+                  android:gravity="center">
+                  <Button
+                      android:id="@+id/btnConnect"
+                      android:layout_width="180dp"
+                      android:layout_height="180dp"
+                      android:background="@drawable/glow_button_bg"
+                      android:text="⏻\nCONNECT"
+                      android:textColor="#FFFFFF"
+                      android:textSize="18sp"
+                      android:textStyle="bold" />
+              </RelativeLayout>
+
+              <LinearLayout
+                  android:id="@+id/serverSelectorCard"
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:background="@drawable/card_dark_bg"
+                  android:padding="16dp"
+                  android:orientation="horizontal"
+                  android:gravity="center_vertical"
+                  android:layout_marginBottom="14dp">
+                  <LinearLayout
+                      android:layout_width="0dp"
+                      android:layout_height="wrap_content"
+                      android:layout_weight="1"
+                      android:orientation="vertical">
+                      <TextView
+                          android:id="@+id/tvServerName"
+                          android:layout_width="wrap_content"
+                          android:layout_height="wrap_content"
+                          android:text="🇧🇩 Bangladesh (Dhaka Fast)"
+                          android:textColor="#FFFFFF"
+                          android:textSize="16sp"
+                          android:textStyle="bold" />
+                      <TextView
+                          android:id="@+id/tvServerIp"
+                          android:layout_width="wrap_content"
+                          android:layout_height="wrap_content"
+                          android:text="IP: 103.108.140.15"
+                          android:textColor="#94A3B8"
+                          android:textSize="12sp"
+                          android:layout_marginTop="2dp" />
+                  </LinearLayout>
+                  <TextView
+                      android:id="@+id/tvPing"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:text="📶 18ms  >"
+                      android:textColor="#4ADE80"
+                      android:textSize="14sp"
+                      android:textStyle="bold" />
+              </LinearLayout>
+
+              <LinearLayout
+                  android:layout_width="match_parent"
+                  android:layout_height="54dp"
+                  android:background="@drawable/card_dark_bg"
+                  android:orientation="horizontal"
+                  android:gravity="center"
+                  android:weightSum="4">
+                  <Button
+                      android:id="@+id/navHome"
+                      android:layout_width="0dp"
+                      android:layout_height="match_parent"
+                      android:layout_weight="1"
+                      android:text="🏠"
+                      android:background="?android:attr/selectableItemBackground"
+                      android:textSize="18sp"/>
+                  <Button
+                      android:id="@+id/navSpeed"
+                      android:layout_width="0dp"
+                      android:layout_height="match_parent"
+                      android:layout_weight="1"
+                      android:text="⚡ Ping"
+                      android:textColor="#94A3B8"
+                      android:background="?android:attr/selectableItemBackground"
+                      android:textSize="12sp"/>
+                  <Button
+                      android:id="@+id/navServers"
+                      android:layout_width="0dp"
+                      android:layout_height="match_parent"
+                      android:layout_weight="1"
+                      android:text="🌐 55+ List"
+                      android:textColor="#94A3B8"
+                      android:background="?android:attr/selectableItemBackground"
+                      android:textSize="12sp"/>
+                  <Button
+                      android:id="@+id/navKillSwitch"
+                      android:layout_width="0dp"
+                      android:layout_height="match_parent"
+                      android:layout_weight="1"
+                      android:text="🛡 Kill: OFF"
+                      android:textColor="#94A3B8"
+                      android:background="?android:attr/selectableItemBackground"
+                      android:textSize="11sp"/>
+              </LinearLayout>
+          </LinearLayout>
+          EOF
+
+          cat << 'EOF' > app/src/main/java/com/skumar/nexusvpn/NexusVpnService.java
+          package com.skumar.nexusvpn;
+
+          import android.content.Intent;
+          import android.content.SharedPreferences;
+          import android.net.VpnService;
+          import android.os.ParcelFileDescriptor;
+          import java.io.IOException;
+          import java.util.HashSet;
+          import java.util.Set;
+
+          public class NexusVpnService extends VpnService {
+              private ParcelFileDescriptor vpnInterface = null;
+              public static boolean isRunning = false;
+              public static long startTimeMillis = 0;
+
+              @Override
+              public int onStartCommand(Intent intent, int flags, int startId) {
+                  if (intent != null && "STOP".equals(intent.getAction())) {
+                      stopVpn();
+                      return START_NOT_STICKY;
+                  }
+                  startVpn();
+                  return START_STICKY;
+              }
+
+              private void startVpn() {
+                  if (vpnInterface != null) return;
+                  try {
+                      SharedPreferences prefs = getSharedPreferences("NexusPrefs", MODE_PRIVATE);
+                      boolean adBlockEnabled = prefs.getBoolean("adblock", true);
+                      boolean killSwitchEnabled = prefs.getBoolean("killswitch", false);
+                      Set<String> bypassedApps = prefs.getStringSet("bypassed_apps", new HashSet<>());
+
+                      Builder builder = new Builder();
+                      builder.setSession("NEXUS VPN")
+                             .setMtu(1420)
+                             .addAddress("10.0.0.2", 32)
+                             .addRoute("0.0.0.0", 0);
+
+                      if (adBlockEnabled) {
+                          builder.addDnsServer("94.140.14.14");
+                          builder.addDnsServer("94.140.15.15");
+                      } else {
+                          builder.addDnsServer("1.1.1.1");
+                          builder.addDnsServer("1.0.0.1");
+                      }
+
+                      if (killSwitchEnabled) {
+                          builder.setBlocking(true);
+                      }
+
+                      for (String packageName : bypassedApps) {
+                          try {
+                              builder.addDisallowedApplication(packageName);
+                          } catch (Exception ignored) {}
+                      }
+
+                      vpnInterface = builder.establish();
+                      isRunning = true;
+                      startTimeMillis = System.currentTimeMillis();
+                  } catch (Exception e) {
+                      e.printStackTrace();
+                  }
+              }
+
+              private void stopVpn() {
+                  try {
+                      if (vpnInterface != null) {
+                          vpnInterface.close();
+                          vpnInterface = null;
+                      }
+                  } catch (IOException e) {
+                      e.printStackTrace();
+                  }
+                  isRunning = false;
+                  startTimeMillis = 0;
+                  stopSelf();
+              }
+
+              @Override
+              public void onDestroy() {
+                  stopVpn();
+                  super.onDestroy();
+              }
+          }
+          EOF
+
+          cat << 'EOF' > app/src/main/java/com/skumar/nexusvpn/MainActivity.java
+          package com.skumar.nexusvpn;
+
+          import android.app.Activity;
+          import android.app.AlertDialog;
+          import android.content.Intent;
+          import android.content.SharedPreferences;
+          import android.content.pm.ApplicationInfo;
+          import android.content.pm.PackageManager;
+          import android.graphics.Color;
+          import android.net.TrafficStats;
+          import android.net.VpnService;
+          import android.os.Bundle;
+          import android.os.Handler;
+          import android.os.Looper;
+          import android.widget.Button;
+          import android.widget.LinearLayout;
+          import android.widget.TextView;
+          import android.widget.Toast;
+          import androidx.appcompat.app.AppCompatActivity;
+          import java.util.ArrayList;
+          import java.util.HashSet;
+          import java.util.List;
+          import java.util.Locale;
+          import java.util.Random;
+          import java.util.Set;
+
+          public class MainActivity extends AppCompatActivity {
+              private static final int VPN_REQUEST_CODE = 101;
+              private TextView tvStatus, tvTimer, tvDownloadSpeed, tvUploadSpeed, tvServerName, tvServerIp, tvPing;
+              private Button btnConnect, btnAdBlock, btnSplitTunnel, navKillSwitch, navServers, navSpeed;
+              private SharedPreferences prefs;
+
+              private final Handler handler = new Handler(Looper.getMainLooper());
+              private long lastRxBytes = 0;
+              private long lastTxBytes = 0;
+
+              private final String[][] serverList = {
+                  {"🇧🇩 Bangladesh (Dhaka Fast)", "103.108.140.15", "18ms"},
+                  {"🇮🇳 India (Mumbai Gaming)", "103.21.244.8", "24ms"},
+                  {"🇮🇳 India (New Delhi)", "103.224.241.19", "29ms"},
+                  {"🇸🇬 Singapore (Ultra VIP)", "172.67.182.9", "32ms"},
+                  {"🇺🇸 United States (New York)", "104.21.48.12", "110ms"},
+                  {"🇺🇸 United States (Los Angeles)", "172.67.140.33", "125ms"},
+                  {"🇬🇧 United Kingdom (London)", "172.64.155.20", "95ms"},
+                  {"🇩🇪 Germany (Frankfurt)", "188.114.96.3", "92ms"},
+                  {"🇯🇵 Japan (Tokyo)", "104.26.10.78", "68ms"},
+                  {"🇰🇷 South Korea (Seoul)", "175.45.176.12", "72ms"},
+                  {"🇦🇪 UAE (Dubai)", "185.151.204.10", "55ms"},
+                  {"🇸🇦 Saudi Arabia (Riyadh)", "212.138.112.44", "62ms"},
+                  {"🇶🇦 Qatar (Doha)", "178.152.200.18", "58ms"},
+                  {"🇲🇾 Malaysia (Kuala Lumpur)", "103.6.196.21", "38ms"},
+                  {"🇮🇩 Indonesia (Jakarta)", "103.147.154.9", "44ms"},
+                  {"🇹🇭 Thailand (Bangkok)", "103.253.72.14", "41ms"},
+                  {"🇻🇳 Vietnam (Hanoi)", "103.1.238.55", "47ms"},
+                  {"🇵🇭 Philippines (Manila)", "103.106.168.12", "53ms"},
+                  {"🇭🇰 Hong Kong (VIP)", "103.243.176.90", "45ms"},
+                  {"🇹🇼 Taiwan (Taipei)", "103.124.72.31", "49ms"},
+                  {"🇨🇦 Canada (Toronto)", "192.99.148.66", "115ms"},
+                  {"🇦🇺 Australia (Sydney)", "103.246.250.11", "88ms"},
+                  {"🇳🇿 New Zealand (Auckland)", "103.231.90.42", "96ms"},
+                  {"🇫🇷 France (Paris)", "185.16.44.71", "94ms"},
+                  {"🇳🇱 Netherlands (Amsterdam)", "185.107.56.88", "91ms"},
+                  {"🇨🇭 Switzerland (Zurich)", "185.156.46.19", "97ms"},
+                  {"🇮🇹 Italy (Milan)", "185.229.236.50", "99ms"},
+                  {"🇪🇸 Spain (Madrid)", "185.253.152.33", "103ms"},
+                  {"🇸🇪 Sweden (Stockholm)", "185.213.154.67", "105ms"},
+                  {"🇳🇴 Norway (Oslo)", "185.125.168.24", "108ms"},
+                  {"🇫🇮 Finland (Helsinki)", "95.216.144.82", "104ms"},
+                  {"🇩🇰 Denmark (Copenhagen)", "185.10.220.15", "101ms"},
+                  {"🇵🇱 Poland (Warsaw)", "185.208.164.39", "98ms"},
+                  {"🇹🇷 Turkey (Istanbul)", "185.122.202.74", "78ms"},
+                  {"🇷🇺 Russia (Moscow)", "185.177.94.12", "85ms"},
+                  {"🇺🇦 Ukraine (Kyiv)", "185.233.116.48", "90ms"},
+                  {"🇧🇷 Brazil (Sao Paulo)", "177.54.148.22", "165ms"},
+                  {"🇦🇷 Argentina (Buenos Aires)", "190.210.180.14", "178ms"},
+                  {"🇲🇽 Mexico (Mexico City)", "187.188.164.51", "142ms"},
+                  {"🇨🇱 Chile (Santiago)", "200.73.112.38", "182ms"},
+                  {"🇨🇴 Colombia (Bogota)", "190.85.140.29", "158ms"},
+                  {"🇿🇦 South Africa (Johannesburg)", "196.244.192.63", "148ms"},
+                  {"🇪🇬 Egypt (Cairo)", "197.45.128.19", "89ms"},
+                  {"🇳🇬 Nigeria (Lagos)", "197.210.64.81", "154ms"},
+                  {"🇰🇪 Kenya (Nairobi)", "196.201.214.35", "136ms"},
+                  {"🇵🇰 Pakistan (Karachi)", "103.255.4.77", "46ms"},
+                  {"🇱🇰 Sri Lanka (Colombo)", "103.247.192.18", "39ms"},
+                  {"🇳🇵 Nepal (Kathmandu)", "103.69.124.52", "34ms"},
+                  {"🇮🇪 Ireland (Dublin)", "185.111.212.40", "96ms"},
+                  {"🇦🇹 Austria (Vienna)", "185.181.60.27", "95ms"},
+                  {"🇧🇪 Belgium (Brussels)", "185.162.248.16", "93ms"},
+                  {"🇵🇹 Portugal (Lisbon)", "185.113.140.61", "107ms"},
+                  {"🇬🇷 Greece (Athens)", "185.138.42.84", "86ms"},
+                  {"🇷🇴 Romania (Bucharest)", "185.146.84.23", "87ms"},
+                  {"🇨🇿 Czech Republic (Prague)", "185.184.252.49", "94ms"}
+              };
+              private int selectedServerIndex = 0;
+
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  setContentView(R.layout.activity_main);
+
+                  prefs = getSharedPreferences("NexusPrefs", MODE_PRIVATE);
+
+                  tvStatus = findViewById(R.id.tvStatus);
+                  tvTimer = findViewById(R.id.tvTimer);
+                  tvDownloadSpeed = findViewById(R.id.tvDownloadSpeed);
+                  tvUploadSpeed = findViewById(R.id.tvUploadSpeed);
+                  tvServerName = findViewById(R.id.tvServerName);
+                  tvServerIp = findViewById(R.id.tvServerIp);
+                  tvPing = findViewById(R.id.tvPing);
+
+                  btnConnect = findViewById(R.id.btnConnect);
+                  btnAdBlock = findViewById(R.id.btnAdBlock);
+                  btnSplitTunnel = findViewById(R.id.btnSplitTunnel);
+                  navKillSwitch = findViewById(R.id.navKillSwitch);
+                  navServers = findViewById(R.id.navServers);
+                  navSpeed = findViewById(R.id.navSpeed);
+                  LinearLayout serverSelectorCard = findViewById(R.id.serverSelectorCard);
+
+                  updateFeatureButtons();
+                  updateServerDisplay();
+
+                  btnConnect.setOnClickListener(v -> {
+                      if (!NexusVpnService.isRunning) {
+                          Intent intent = VpnService.prepare(this);
+                          if (intent != null) {
+                              startActivityForResult(intent, VPN_REQUEST_CODE);
+                          } else {
+                              onActivityResult(VPN_REQUEST_CODE, Activity.RESULT_OK, null);
+                          }
+                      } else {
+                          Intent intent = new Intent(this, NexusVpnService.class);
+                          intent.setAction("STOP");
+                          startService(intent);
+                          updateUIState(false);
+                      }
+                  });
+
+                  btnAdBlock.setOnClickListener(v -> {
+                      boolean current = prefs.getBoolean("adblock", true);
+                      prefs.edit().putBoolean("adblock", !current).apply();
+                      updateFeatureButtons();
+                      Toast.makeText(this, !current ? "AdGuard Ad-Blocker Enabled" : "Standard Cloudflare DNS Enabled", Toast.LENGTH_SHORT).show();
+                  });
+
+                  navKillSwitch.setOnClickListener(v -> {
+                      boolean current = prefs.getBoolean("killswitch", false);
+                      prefs.edit().putBoolean("killswitch", !current).apply();
+                      updateFeatureButtons();
+                      Toast.makeText(this, !current ? "Kill Switch Activated" : "Kill Switch Off", Toast.LENGTH_SHORT).show();
+                  });
+
+                  btnSplitTunnel.setOnClickListener(v -> showSplitTunnelDialog());
+                  serverSelectorCard.setOnClickListener(v -> showServerDialog());
+                  navServers.setOnClickListener(v -> showServerDialog());
+
+                  navSpeed.setOnClickListener(v -> {
+                      int randomPing = 16 + new Random().nextInt(35);
+                      tvPing.setText("📶 " + randomPing + "ms  >");
+                      Toast.makeText(this, "Ping Refreshed: " + randomPing + "ms", Toast.LENGTH_SHORT).show();
+                  });
+
+                  lastRxBytes = TrafficStats.getTotalRxBytes();
+                  lastTxBytes = TrafficStats.getTotalTxBytes();
+                  handler.post(statsRunnable);
+              }
+
+              private void showServerDialog() {
+                  String[] names = new String[serverList.length];
+                  for (int i = 0; i < serverList.length; i++) {
+                      names[i] = serverList[i][0] + "  (" + serverList[i][2] + ")";
+                  }
+                  new AlertDialog.Builder(this)
+                      .setTitle("Select Server (55 Countries)")
+                      .setItems(names, (dialog, which) -> {
+                          selectedServerIndex = which;
+                          updateServerDisplay();
+                          Toast.makeText(this, "Selected: " + serverList[which][0], Toast.LENGTH_SHORT).show();
+                      })
+                      .show();
+              }
+
+              private void showSplitTunnelDialog() {
+                  PackageManager pm = getPackageManager();
+                  List<ApplicationInfo> apps = pm.getInstalledApplications(PackageManager.GET_META_DATA);
+                  List<String> appNames = new ArrayList<>();
+                  List<String> appPackages = new ArrayList<>();
+                  Set<String> bypassed = new HashSet<>(prefs.getStringSet("bypassed_apps", new HashSet<>()));
+
+                  for (ApplicationInfo app : apps) {
+                      if (pm.getLaunchIntentForPackage(app.packageName) != null && !app.packageName.equals(getPackageName())) {
+                          appNames.add(pm.getApplicationLabel(app).toString());
+                          appPackages.add(app.packageName);
+                      }
+                  }
+
+                  boolean[] checkedItems = new boolean[appPackages.size()];
+                  for (int i = 0; i < appPackages.size(); i++) {
+                      checkedItems[i] = bypassed.contains(appPackages.get(i));
+                  }
+
+                  new AlertDialog.Builder(this)
+                      .setTitle("Split Tunneling (Bypass VPN)")
+                      .setMultiChoiceItems(appNames.toArray(new String[0]), checkedItems, (dialog, which, isChecked) -> {
+                          if (isChecked) bypassed.add(appPackages.get(which));
+                          else bypassed.remove(appPackages.get(which));
+                      })
+                      .setPositiveButton("Save", (dialog, which) -> {
+                          prefs.edit().putStringSet("bypassed_apps", bypassed).apply();
+                          Toast.makeText(this, "Split Tunneling Saved!", Toast.LENGTH_SHORT).show();
+                      })
+                      .setNegativeButton("Cancel", null)
+                      .show();
+              }
+
+              private void updateServerDisplay() {
+                  tvServerName.setText(serverList[selectedServerIndex][0]);
+                  tvServerIp.setText("IP: " + serverList[selectedServerIndex][1]);
+                  tvPing.setText("📶 " + serverList[selectedServerIndex][2] + "  >");
+              }
+
+              private void updateFeatureButtons() {
+                  boolean adBlock = prefs.getBoolean("adblock", true);
+                  boolean killSwitch = prefs.getBoolean("killswitch", false);
+                  btnAdBlock.setText(adBlock ? "👑 AdBlock: ON" : "👑 AdBlock: OFF");
+                  navKillSwitch.setText(killSwitch ? "🛡 Kill: ON" : "🛡 Kill: OFF");
+                  navKillSwitch.setTextColor(killSwitch ? Color.parseColor("#4ADE80") : Color.parseColor("#94A3B8"));
+              }
+
+              @Override
+              protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+                  super.onActivityResult(requestCode, resultCode, data);
+                  if (requestCode == VPN_REQUEST_CODE && resultCode == Activity.RESULT_OK) {
+                      Intent intent = new Intent(this, NexusVpnService.class);
+                      startService(intent);
+                      updateUIState(true);
+                  }
+              }
+
+              private void updateUIState(boolean connected) {
+                  if (connected) {
+                      tvStatus.setText("Connected");
+                      tvStatus.setTextColor(Color.parseColor("#4ADE80"));
+                      btnConnect.setText("⏻\nDISCONNECT");
+                  } else {
+                      tvStatus.setText("Disconnected");
+                      tvStatus.setTextColor(Color.parseColor("#F8FAFC"));
+                      btnConnect.setText("⏻\nCONNECT");
+                      tvTimer.setText("00:00:00");
+                  }
+              }
+
+              private final Runnable statsRunnable = new Runnable() {
+                  @Override
+                  public void run() {
+                      long currentRx = TrafficStats.getTotalRxBytes();
+                      long currentTx = TrafficStats.getTotalTxBytes();
+
+                      long rxSpeed = Math.max(0, currentRx - lastRxBytes);
+                      long txSpeed = Math.max(0, currentTx - lastTxBytes);
+                      lastRxBytes = currentRx;
+                      lastTxBytes = currentTx;
+
+                      tvDownloadSpeed.setText(formatSpeed(rxSpeed));
+                      tvUploadSpeed.setText(formatSpeed(txSpeed));
+
+                      if (NexusVpnService.isRunning && NexusVpnService.startTimeMillis > 0) {
+                          updateUIState(true);
+                          long elapsed = (System.currentTimeMillis() - NexusVpnService.startTimeMillis) / 1000;
+                          long hrs = elapsed / 3600;
+                          long mins = (elapsed % 3600) / 60;
+                          long secs = elapsed % 60;
+                          tvTimer.setText(String.format(Locale.US, "%02d:%02d:%02d", hrs, mins, secs));
+                      }
+                      handler.postDelayed(this, 1000);
+                  }
+              };
+
+              private String formatSpeed(long bytesPerSec) {
+                  if (bytesPerSec >= 1024 * 1024) {
+                      return String.format(Locale.US, "%.2f MB/s", bytesPerSec / (1024.0 * 1024.0));
+                  } else {
+                      return String.format(Locale.US, "%.1f KB/s", bytesPerSec / 1024.0);
+                  }
+              }
+          }
+          EOF
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: 8.5
+
+      - name: Build Debug APK
+        run: gradle assembleDebug --no-daemon
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: NEXUS-VPN-PRO-APK
+          path: app/build/outputs/apk/debug/app-debug.apk

@@ -10,11 +10,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Generate Complete NEXUS VPN Project
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Generate Exact Reference UI NEXUS VPN Project
         run: |
           mkdir -p app/src/main/java/com/skumar/nexusvpn
           mkdir -p app/src/main/res/drawable
           mkdir -p app/src/main/res/layout
+
+          if [ -f "icon.png" ]; then
+            cp icon.png app/src/main/res/drawable/app_logo.png
+          fi
 
           cat << 'EOF' > settings.gradle
           pluginManagement {
@@ -77,7 +84,13 @@ jobs:
           }
           EOF
 
-          cat << 'EOF' > app/src/main/AndroidManifest.xml
+          if [ -f "app/src/main/res/drawable/app_logo.png" ]; then
+            ICON_ATTR='android:icon="@drawable/app_logo"'
+          else
+            ICON_ATTR=''
+          fi
+
+          cat << EOF > app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               <uses-permission android:name="android.permission.INTERNET" />
@@ -87,6 +100,7 @@ jobs:
 
               <application
                   android:allowBackup="true"
+                  $ICON_ATTR
                   android:label="NEXUS VPN"
                   android:supportsRtl="true"
                   android:theme="@style/Theme.Material3.Dark.NoActionBar">
@@ -111,26 +125,114 @@ jobs:
           </manifest>
           EOF
 
-          cat << 'EOF' > app/src/main/res/drawable/glow_button_bg.xml
+          cat << 'EOF' > app/src/main/res/drawable/bg_main_gradient.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <shape xmlns:android="http://schemas.android.com/apk/res/android">
+              <gradient
+                  android:type="radial"
+                  android:gradientRadius="420dp"
+                  android:centerX="0.5"
+                  android:centerY="0.52"
+                  android:startColor="#0A3A5A"
+                  android:centerColor="#071522"
+                  android:endColor="#04070B" />
+          </shape>
+          EOF
+
+          cat << 'EOF' > app/src/main/res/drawable/bg_outer_halo.xml
           <?xml version="1.0" encoding="utf-8"?>
           <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
               <gradient
                   android:type="radial"
-                  android:gradientRadius="110dp"
-                  android:startColor="#00D2FF"
-                  android:centerColor="#0080FF"
-                  android:endColor="#0A192F" />
-              <stroke android:width="4dp" android:color="#38BDF8" />
+                  android:gradientRadius="140dp"
+                  android:startColor="#6600C6FF"
+                  android:centerColor="#260099FF"
+                  android:endColor="#00000000" />
           </shape>
           EOF
 
-          cat << 'EOF' > app/src/main/res/drawable/card_dark_bg.xml
+          cat << 'EOF' > app/src/main/res/drawable/bg_power_ring.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
+              <solid android:color="#081C2C" />
+              <stroke android:width="3dp" android:color="#00B4D8" />
+          </shape>
+          EOF
+
+          cat << 'EOF' > app/src/main/res/drawable/bg_power_core.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
+              <gradient
+                  android:angle="270"
+                  android:startColor="#48CAE4"
+                  android:centerColor="#0096C7"
+                  android:endColor="#023E8A" />
+              <stroke android:width="2dp" android:color="#90E0EF" />
+          </shape>
+          EOF
+
+          cat << 'EOF' > app/src/main/res/drawable/bg_glass_card.xml
           <?xml version="1.0" encoding="utf-8"?>
           <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-              <solid android:color="#111927" />
-              <corners android:radius="18dp" />
-              <stroke android:width="1dp" android:color="#1E293B" />
+              <solid android:color="#CC0D131A" />
+              <corners android:radius="20dp" />
+              <stroke android:width="1dp" android:color="#263241" />
           </shape>
+          EOF
+
+          cat << 'EOF' > app/src/main/res/drawable/bg_pill_capsule.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+              <solid android:color="#D90B1017" />
+              <corners android:radius="40dp" />
+              <stroke android:width="1dp" android:color="#232D3B" />
+          </shape>
+          EOF
+
+          cat << 'EOF' > app/src/main/res/drawable/bg_circle_icon.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
+              <solid android:color="#15202B" />
+              <stroke android:width="1dp" android:color="#273445" />
+          </shape>
+          EOF
+
+          cat << 'EOF' > app/src/main/res/drawable/bg_circle_active.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
+              <solid android:color="#122B3B" />
+              <stroke android:width="1.5dp" android:color="#00B4D8" />
+          </shape>
+          EOF
+
+          cat << 'EOF' > app/src/main/res/drawable/ic_shield_blue.xml
+          <vector xmlns:android="http://schemas.android.com/apk/res/android"
+              android:width="24dp" android:height="24dp"
+              android:viewportWidth="24" android:viewportHeight="24">
+              <path android:fillColor="#00B4D8"
+                  android:pathData="M12,1L3,5v6c0,5.55 3.84,10.74 9,12c5.16,-1.26 9,-6.45 9,-12V5L12,1zM10,17l-4,-4l1.41,-1.41L10,14.17l6.59,-6.59L18,9L10,17z"/>
+          </vector>
+          EOF
+
+          cat << 'EOF' > app/src/main/res/drawable/ic_power_white.xml
+          <vector xmlns:android="http://schemas.android.com/apk/res/android"
+              android:width="44dp" android:height="44dp"
+              android:viewportWidth="24" android:viewportHeight="24">
+              <path android:fillColor="#FFFFFF"
+                  android:pathData="M13,3h-2v10h2V3zM17.83,5.17l-1.42,1.42C17.99,7.86 19,9.81 19,12c0,3.87 -3.13,7 -7,7s-7,-3.13 -7,-7c0,-2.19 1.01,-4.14 2.58,-5.42L6.17,5.17C4.23,6.82 3,9.26 3,12c0,4.97 4.03,9 9,9s9,-4.03 9,-9C21,9.26 19.77,6.82 17.83,5.17z"/>
+          </vector>
+          EOF
+
+          cat << 'EOF' > app/src/main/res/drawable/ic_signal_bars.xml
+          <vector xmlns:android="http://schemas.android.com/apk/res/android"
+              android:width="22dp" android:height="16dp"
+              android:viewportWidth="22" android:viewportHeight="16">
+              <path android:fillColor="#00B4D8" android:pathData="M1,11h2.5v4H1z"/>
+              <path android:fillColor="#00B4D8" android:pathData="M5.5,8.5H8V15H5.5z"/>
+              <path android:fillColor="#00B4D8" android:pathData="M10,6h2.5v9H10z"/>
+              <path android:fillColor="#00B4D8" android:pathData="M14.5,3.5H17V15h-2.5z"/>
+              <path android:fillColor="#334155" android:pathData="M19,1h2.5v14H19z"/>
+          </vector>
           EOF
 
           cat << 'EOF' > app/src/main/res/layout/activity_main.xml
@@ -139,227 +241,405 @@ jobs:
               android:layout_width="match_parent"
               android:layout_height="match_parent"
               android:orientation="vertical"
-              android:background="#060B14"
-              android:padding="20dp"
+              android:background="@drawable/bg_main_gradient"
+              android:paddingStart="20dp"
+              android:paddingEnd="20dp"
+              android:paddingTop="18dp"
+              android:paddingBottom="18dp"
               android:gravity="center_horizontal">
 
+              <!-- Top Header matching exact screenshot -->
               <RelativeLayout
                   android:layout_width="match_parent"
-                  android:layout_height="wrap_content"
-                  android:paddingTop="8dp">
+                  android:layout_height="wrap_content">
+
                   <LinearLayout
                       android:layout_width="wrap_content"
                       android:layout_height="wrap_content"
-                      android:orientation="vertical">
-                      <TextView
+                      android:orientation="horizontal"
+                      android:gravity="center_vertical">
+
+                      <FrameLayout
+                          android:layout_width="42dp"
+                          android:layout_height="42dp"
+                          android:background="@drawable/bg_circle_icon">
+                          <ImageView
+                              android:layout_width="22dp"
+                              android:layout_height="22dp"
+                              android:layout_gravity="center"
+                              android:src="@drawable/ic_shield_blue" />
+                      </FrameLayout>
+
+                      <LinearLayout
                           android:layout_width="wrap_content"
                           android:layout_height="wrap_content"
-                          android:text="Status Connection"
-                          android:textColor="#64748B"
-                          android:textSize="12sp" />
-                      <TextView
-                          android:id="@+id/tvStatus"
-                          android:layout_width="wrap_content"
-                          android:layout_height="wrap_content"
-                          android:text="Disconnected"
-                          android:textColor="#F8FAFC"
-                          android:textSize="16sp"
-                          android:textStyle="bold" />
+                          android:orientation="vertical"
+                          android:layout_marginStart="12dp">
+                          <TextView
+                              android:layout_width="wrap_content"
+                              android:layout_height="wrap_content"
+                              android:text="Status Connection"
+                              android:textColor="#64748B"
+                              android:textSize="11sp" />
+                          <TextView
+                              android:id="@+id/tvStatus"
+                              android:layout_width="wrap_content"
+                              android:layout_height="wrap_content"
+                              android:text="Disconnected"
+                              android:textColor="#FFFFFF"
+                              android:textSize="15sp"
+                              android:textStyle="bold" />
+                      </LinearLayout>
                   </LinearLayout>
+
+                  <!-- Top Right Pill with Gear (Split Tunnel) & Gold Crown (AdBlock) -->
                   <LinearLayout
                       android:layout_width="wrap_content"
-                      android:layout_height="wrap_content"
+                      android:layout_height="42dp"
                       android:layout_alignParentEnd="true"
+                      android:background="@drawable/bg_pill_capsule"
+                      android:paddingStart="10dp"
+                      android:paddingEnd="10dp"
+                      android:gravity="center_vertical"
                       android:orientation="horizontal">
-                      <Button
+
+                      <TextView
                           android:id="@+id/btnSplitTunnel"
-                          android:layout_width="wrap_content"
-                          android:layout_height="38dp"
-                          android:text="⚙ Split"
-                          android:textSize="12sp"
-                          android:textColor="#38BDF8"
-                          android:backgroundTint="#111927"
-                          android:layout_marginEnd="6dp"/>
-                      <Button
+                          android:layout_width="30dp"
+                          android:layout_height="30dp"
+                          android:gravity="center"
+                          android:text="⚙"
+                          android:textColor="#94A3B8"
+                          android:textSize="18sp" />
+
+                      <TextView
                           android:id="@+id/btnAdBlock"
-                          android:layout_width="wrap_content"
-                          android:layout_height="38dp"
-                          android:text="👑 AdBlock: ON"
-                          android:textSize="12sp"
-                          android:textColor="#FACC15"
-                          android:backgroundTint="#111927"/>
+                          android:layout_width="32dp"
+                          android:layout_height="30dp"
+                          android:gravity="center"
+                          android:text="👑"
+                          android:textSize="17sp"
+                          android:layout_marginStart="6dp" />
                   </LinearLayout>
               </RelativeLayout>
 
+              <!-- Digital Timer matching 00.53.50 style -->
               <TextView
                   android:id="@+id/tvTimer"
                   android:layout_width="wrap_content"
                   android:layout_height="wrap_content"
-                  android:text="00:00:00"
-                  android:textColor="#FFFFFF"
-                  android:textSize="36sp"
+                  android:text="00.00.00"
+                  android:textColor="#F8FAFC"
+                  android:textSize="34sp"
                   android:textStyle="bold"
-                  android:letterSpacing="0.08"
-                  android:layout_marginTop="24dp" />
+                  android:letterSpacing="0.06"
+                  android:layout_marginTop="20dp" />
 
+              <!-- Download & Upload Curved Dark Glass Cards -->
               <LinearLayout
                   android:layout_width="match_parent"
                   android:layout_height="wrap_content"
                   android:orientation="horizontal"
-                  android:layout_marginTop="20dp"
+                  android:layout_marginTop="18dp"
                   android:weightSum="2">
+
                   <LinearLayout
                       android:layout_width="0dp"
                       android:layout_height="wrap_content"
                       android:layout_weight="1"
-                      android:background="@drawable/card_dark_bg"
+                      android:background="@drawable/bg_glass_card"
                       android:padding="14dp"
-                      android:layout_marginEnd="8dp"
+                      android:layout_marginEnd="6dp"
                       android:orientation="vertical"
                       android:gravity="center">
                       <TextView
                           android:layout_width="wrap_content"
                           android:layout_height="wrap_content"
-                          android:text="↓ Download"
-                          android:textColor="#38BDF8"
-                          android:textSize="13sp" />
-                      <TextView
-                          android:id="@+id/tvDownloadSpeed"
+                          android:text="Download"
+                          android:textColor="#64748B"
+                          android:textSize="12sp" />
+                      <LinearLayout
                           android:layout_width="wrap_content"
                           android:layout_height="wrap_content"
-                          android:text="0.00 KB/s"
-                          android:textColor="#FFFFFF"
-                          android:textSize="18sp"
-                          android:textStyle="bold"
-                          android:layout_marginTop="4dp" />
+                          android:orientation="horizontal"
+                          android:gravity="center_vertical"
+                          android:layout_marginTop="6dp">
+                          <TextView
+                              android:layout_width="22dp"
+                              android:layout_height="22dp"
+                              android:background="@drawable/bg_circle_icon"
+                              android:gravity="center"
+                              android:text="↓"
+                              android:textColor="#00B4D8"
+                              android:textSize="13sp"
+                              android:textStyle="bold" />
+                          <TextView
+                              android:id="@+id/tvDownloadSpeed"
+                              android:layout_width="wrap_content"
+                              android:layout_height="wrap_content"
+                              android:text="0.00"
+                              android:textColor="#FFFFFF"
+                              android:textSize="20sp"
+                              android:textStyle="bold"
+                              android:layout_marginStart="6dp" />
+                          <TextView
+                              android:id="@+id/tvDownloadUnit"
+                              android:layout_width="wrap_content"
+                              android:layout_height="wrap_content"
+                              android:text=" KB/S"
+                              android:textColor="#64748B"
+                              android:textSize="10sp"
+                              android:layout_marginTop="3dp" />
+                      </LinearLayout>
                   </LinearLayout>
+
                   <LinearLayout
                       android:layout_width="0dp"
                       android:layout_height="wrap_content"
                       android:layout_weight="1"
-                      android:background="@drawable/card_dark_bg"
+                      android:background="@drawable/bg_glass_card"
                       android:padding="14dp"
-                      android:layout_marginStart="8dp"
+                      android:layout_marginStart="6dp"
                       android:orientation="vertical"
                       android:gravity="center">
                       <TextView
                           android:layout_width="wrap_content"
                           android:layout_height="wrap_content"
-                          android:text="↑ Upload"
-                          android:textColor="#FACC15"
-                          android:textSize="13sp" />
-                      <TextView
-                          android:id="@+id/tvUploadSpeed"
+                          android:text="Upload"
+                          android:textColor="#64748B"
+                          android:textSize="12sp" />
+                      <LinearLayout
                           android:layout_width="wrap_content"
                           android:layout_height="wrap_content"
-                          android:text="0.00 KB/s"
-                          android:textColor="#FFFFFF"
-                          android:textSize="18sp"
-                          android:textStyle="bold"
-                          android:layout_marginTop="4dp" />
+                          android:orientation="horizontal"
+                          android:gravity="center_vertical"
+                          android:layout_marginTop="6dp">
+                          <TextView
+                              android:layout_width="22dp"
+                              android:layout_height="22dp"
+                              android:background="@drawable/bg_circle_icon"
+                              android:gravity="center"
+                              android:text="↑"
+                              android:textColor="#FACC15"
+                              android:textSize="13sp"
+                              android:textStyle="bold" />
+                          <TextView
+                              android:id="@+id/tvUploadSpeed"
+                              android:layout_width="wrap_content"
+                              android:layout_height="wrap_content"
+                              android:text="0.00"
+                              android:textColor="#FFFFFF"
+                              android:textSize="20sp"
+                              android:textStyle="bold"
+                              android:layout_marginStart="6dp" />
+                          <TextView
+                              android:id="@+id/tvUploadUnit"
+                              android:layout_width="wrap_content"
+                              android:layout_height="wrap_content"
+                              android:text=" KB/S"
+                              android:textColor="#64748B"
+                              android:textSize="10sp"
+                              android:layout_marginTop="3dp" />
+                      </LinearLayout>
                   </LinearLayout>
               </LinearLayout>
 
-              <RelativeLayout
+              <!-- Center Glowing Multi-Layer Power Button -->
+              <FrameLayout
                   android:layout_width="match_parent"
                   android:layout_height="0dp"
-                  android:layout_weight="1"
-                  android:gravity="center">
-                  <Button
-                      android:id="@+id/btnConnect"
-                      android:layout_width="180dp"
-                      android:layout_height="180dp"
-                      android:background="@drawable/glow_button_bg"
-                      android:text="⏻\nCONNECT"
-                      android:textColor="#FFFFFF"
-                      android:textSize="18sp"
-                      android:textStyle="bold" />
-              </RelativeLayout>
+                  android:layout_weight="1">
 
+                  <View
+                      android:id="@+id/viewGlowHalo"
+                      android:layout_width="265dp"
+                      android:layout_height="265dp"
+                      android:layout_gravity="center"
+                      android:alpha="0.45"
+                      android:background="@drawable/bg_outer_halo" />
+
+                  <FrameLayout
+                      android:layout_width="184dp"
+                      android:layout_height="184dp"
+                      android:layout_gravity="center"
+                      android:background="@drawable/bg_power_ring">
+
+                      <LinearLayout
+                          android:id="@+id/btnConnect"
+                          android:layout_width="154dp"
+                          android:layout_height="154dp"
+                          android:layout_gravity="center"
+                          android:background="@drawable/bg_power_core"
+                          android:orientation="vertical"
+                          android:gravity="center"
+                          android:clickable="true"
+                          android:focusable="true">
+
+                          <ImageView
+                              android:layout_width="42dp"
+                              android:layout_height="42dp"
+                              android:src="@drawable/ic_power_white" />
+
+                          <TextView
+                              android:id="@+id/tvConnectLabel"
+                              android:layout_width="wrap_content"
+                              android:layout_height="wrap_content"
+                              android:text="Connect"
+                              android:textColor="#E0F2FE"
+                              android:textSize="13sp"
+                              android:textStyle="bold"
+                              android:layout_marginTop="6dp" />
+                      </LinearLayout>
+                  </FrameLayout>
+              </FrameLayout>
+
+              <!-- Pill Server Selector Bar with Flag, IP, Signal Bars & Ping -->
               <LinearLayout
                   android:id="@+id/serverSelectorCard"
                   android:layout_width="match_parent"
-                  android:layout_height="wrap_content"
-                  android:background="@drawable/card_dark_bg"
-                  android:padding="16dp"
+                  android:layout_height="64dp"
+                  android:background="@drawable/bg_pill_capsule"
+                  android:paddingStart="12dp"
+                  android:paddingEnd="18dp"
                   android:orientation="horizontal"
                   android:gravity="center_vertical"
                   android:layout_marginBottom="14dp">
+
+                  <TextView
+                      android:id="@+id/tvFlag"
+                      android:layout_width="42dp"
+                      android:layout_height="42dp"
+                      android:background="@drawable/bg_circle_icon"
+                      android:gravity="center"
+                      android:text="🇧🇩"
+                      android:textSize="22sp" />
+
                   <LinearLayout
                       android:layout_width="0dp"
                       android:layout_height="wrap_content"
                       android:layout_weight="1"
-                      android:orientation="vertical">
+                      android:orientation="vertical"
+                      android:layout_marginStart="12dp">
+
                       <TextView
                           android:id="@+id/tvServerName"
                           android:layout_width="wrap_content"
                           android:layout_height="wrap_content"
-                          android:text="🇧🇩 Bangladesh (Dhaka Fast)"
+                          android:text="Bangladesh"
                           android:textColor="#FFFFFF"
-                          android:textSize="16sp"
+                          android:textSize="15sp"
                           android:textStyle="bold" />
+
                       <TextView
                           android:id="@+id/tvServerIp"
                           android:layout_width="wrap_content"
                           android:layout_height="wrap_content"
                           android:text="IP: 103.108.140.15"
-                          android:textColor="#94A3B8"
-                          android:textSize="12sp"
+                          android:textColor="#64748B"
+                          android:textSize="11sp"
                           android:layout_marginTop="2dp" />
                   </LinearLayout>
+
+                  <ImageView
+                      android:layout_width="22dp"
+                      android:layout_height="16dp"
+                      android:src="@drawable/ic_signal_bars"
+                      android:layout_marginEnd="8dp" />
+
                   <TextView
                       android:id="@+id/tvPing"
                       android:layout_width="wrap_content"
                       android:layout_height="wrap_content"
-                      android:text="📶 18ms  >"
-                      android:textColor="#4ADE80"
-                      android:textSize="14sp"
+                      android:text="18ms"
+                      android:textColor="#94A3B8"
+                      android:textSize="12sp"
+                      android:layout_marginEnd="10dp" />
+
+                  <TextView
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:text=">"
+                      android:textColor="#94A3B8"
+                      android:textSize="16sp"
                       android:textStyle="bold" />
               </LinearLayout>
 
+              <!-- Bottom Capsule Navigation Bar with 4 Circular Icons -->
               <LinearLayout
                   android:layout_width="match_parent"
-                  android:layout_height="54dp"
-                  android:background="@drawable/card_dark_bg"
+                  android:layout_height="62dp"
+                  android:background="@drawable/bg_pill_capsule"
+                  android:paddingStart="10dp"
+                  android:paddingEnd="10dp"
                   android:orientation="horizontal"
                   android:gravity="center"
                   android:weightSum="4">
-                  <Button
-                      android:id="@+id/navHome"
+
+                  <FrameLayout
                       android:layout_width="0dp"
                       android:layout_height="match_parent"
-                      android:layout_weight="1"
-                      android:text="🏠"
-                      android:background="?android:attr/selectableItemBackground"
-                      android:textSize="18sp"/>
-                  <Button
-                      android:id="@+id/navSpeed"
+                      android:layout_weight="1">
+                      <TextView
+                          android:id="@+id/navHome"
+                          android:layout_width="46dp"
+                          android:layout_height="46dp"
+                          android:layout_gravity="center"
+                          android:background="@drawable/bg_circle_active"
+                          android:gravity="center"
+                          android:text="⌂"
+                          android:textColor="#00B4D8"
+                          android:textSize="22sp" />
+                  </FrameLayout>
+
+                  <FrameLayout
                       android:layout_width="0dp"
                       android:layout_height="match_parent"
-                      android:layout_weight="1"
-                      android:text="⚡ Ping"
-                      android:textColor="#94A3B8"
-                      android:background="?android:attr/selectableItemBackground"
-                      android:textSize="12sp"/>
-                  <Button
-                      android:id="@+id/navServers"
+                      android:layout_weight="1">
+                      <TextView
+                          android:id="@+id/navSpeed"
+                          android:layout_width="46dp"
+                          android:layout_height="46dp"
+                          android:layout_gravity="center"
+                          android:background="@drawable/bg_circle_icon"
+                          android:gravity="center"
+                          android:text="⚡"
+                          android:textColor="#94A3B8"
+                          android:textSize="18sp" />
+                  </FrameLayout>
+
+                  <FrameLayout
                       android:layout_width="0dp"
                       android:layout_height="match_parent"
-                      android:layout_weight="1"
-                      android:text="🌐 55+ List"
-                      android:textColor="#94A3B8"
-                      android:background="?android:attr/selectableItemBackground"
-                      android:textSize="12sp"/>
-                  <Button
-                      android:id="@+id/navKillSwitch"
+                      android:layout_weight="1">
+                      <TextView
+                          android:id="@+id/navServers"
+                          android:layout_width="46dp"
+                          android:layout_height="46dp"
+                          android:layout_gravity="center"
+                          android:background="@drawable/bg_circle_icon"
+                          android:gravity="center"
+                          android:text="🌐"
+                          android:textColor="#94A3B8"
+                          android:textSize="18sp" />
+                  </FrameLayout>
+
+                  <FrameLayout
                       android:layout_width="0dp"
                       android:layout_height="match_parent"
-                      android:layout_weight="1"
-                      android:text="🛡 Kill: OFF"
-                      android:textColor="#94A3B8"
-                      android:background="?android:attr/selectableItemBackground"
-                      android:textSize="11sp"/>
+                      android:layout_weight="1">
+                      <TextView
+                          android:id="@+id/navKillSwitch"
+                          android:layout_width="46dp"
+                          android:layout_height="46dp"
+                          android:layout_gravity="center"
+                          android:background="@drawable/bg_circle_icon"
+                          android:gravity="center"
+                          android:text="🛡"
+                          android:textColor="#94A3B8"
+                          android:textSize="18sp" />
+                  </FrameLayout>
               </LinearLayout>
+
           </LinearLayout>
           EOF
 
@@ -460,13 +740,12 @@ jobs:
           import android.content.SharedPreferences;
           import android.content.pm.ApplicationInfo;
           import android.content.pm.PackageManager;
-          import android.graphics.Color;
           import android.net.TrafficStats;
           import android.net.VpnService;
           import android.os.Bundle;
           import android.os.Handler;
           import android.os.Looper;
-          import android.widget.Button;
+          import android.view.View;
           import android.widget.LinearLayout;
           import android.widget.TextView;
           import android.widget.Toast;
@@ -480,8 +759,11 @@ jobs:
 
           public class MainActivity extends AppCompatActivity {
               private static final int VPN_REQUEST_CODE = 101;
-              private TextView tvStatus, tvTimer, tvDownloadSpeed, tvUploadSpeed, tvServerName, tvServerIp, tvPing;
-              private Button btnConnect, btnAdBlock, btnSplitTunnel, navKillSwitch, navServers, navSpeed;
+              private TextView tvStatus, tvTimer, tvDownloadSpeed, tvDownloadUnit, tvUploadSpeed, tvUploadUnit;
+              private TextView tvFlag, tvServerName, tvServerIp, tvPing, tvConnectLabel;
+              private TextView btnAdBlock, btnSplitTunnel, navKillSwitch, navServers, navSpeed;
+              private View viewGlowHalo;
+              private LinearLayout btnConnect;
               private SharedPreferences prefs;
 
               private final Handler handler = new Handler(Looper.getMainLooper());
@@ -489,61 +771,61 @@ jobs:
               private long lastTxBytes = 0;
 
               private final String[][] serverList = {
-                  {"🇧🇩 Bangladesh (Dhaka Fast)", "103.108.140.15", "18ms"},
-                  {"🇮🇳 India (Mumbai Gaming)", "103.21.244.8", "24ms"},
-                  {"🇮🇳 India (New Delhi)", "103.224.241.19", "29ms"},
-                  {"🇸🇬 Singapore (Ultra VIP)", "172.67.182.9", "32ms"},
-                  {"🇺🇸 United States (New York)", "104.21.48.12", "110ms"},
-                  {"🇺🇸 United States (Los Angeles)", "172.67.140.33", "125ms"},
-                  {"🇬🇧 United Kingdom (London)", "172.64.155.20", "95ms"},
-                  {"🇩🇪 Germany (Frankfurt)", "188.114.96.3", "92ms"},
-                  {"🇯🇵 Japan (Tokyo)", "104.26.10.78", "68ms"},
-                  {"🇰🇷 South Korea (Seoul)", "175.45.176.12", "72ms"},
-                  {"🇦🇪 UAE (Dubai)", "185.151.204.10", "55ms"},
-                  {"🇸🇦 Saudi Arabia (Riyadh)", "212.138.112.44", "62ms"},
-                  {"🇶🇦 Qatar (Doha)", "178.152.200.18", "58ms"},
-                  {"🇲🇾 Malaysia (Kuala Lumpur)", "103.6.196.21", "38ms"},
-                  {"🇮🇩 Indonesia (Jakarta)", "103.147.154.9", "44ms"},
-                  {"🇹🇭 Thailand (Bangkok)", "103.253.72.14", "41ms"},
-                  {"🇻🇳 Vietnam (Hanoi)", "103.1.238.55", "47ms"},
-                  {"🇵🇭 Philippines (Manila)", "103.106.168.12", "53ms"},
-                  {"🇭🇰 Hong Kong (VIP)", "103.243.176.90", "45ms"},
-                  {"🇹🇼 Taiwan (Taipei)", "103.124.72.31", "49ms"},
-                  {"🇨🇦 Canada (Toronto)", "192.99.148.66", "115ms"},
-                  {"🇦🇺 Australia (Sydney)", "103.246.250.11", "88ms"},
-                  {"🇳🇿 New Zealand (Auckland)", "103.231.90.42", "96ms"},
-                  {"🇫🇷 France (Paris)", "185.16.44.71", "94ms"},
-                  {"🇳🇱 Netherlands (Amsterdam)", "185.107.56.88", "91ms"},
-                  {"🇨🇭 Switzerland (Zurich)", "185.156.46.19", "97ms"},
-                  {"🇮🇹 Italy (Milan)", "185.229.236.50", "99ms"},
-                  {"🇪🇸 Spain (Madrid)", "185.253.152.33", "103ms"},
-                  {"🇸🇪 Sweden (Stockholm)", "185.213.154.67", "105ms"},
-                  {"🇳🇴 Norway (Oslo)", "185.125.168.24", "108ms"},
-                  {"🇫🇮 Finland (Helsinki)", "95.216.144.82", "104ms"},
-                  {"🇩🇰 Denmark (Copenhagen)", "185.10.220.15", "101ms"},
-                  {"🇵🇱 Poland (Warsaw)", "185.208.164.39", "98ms"},
-                  {"🇹🇷 Turkey (Istanbul)", "185.122.202.74", "78ms"},
-                  {"🇷🇺 Russia (Moscow)", "185.177.94.12", "85ms"},
-                  {"🇺🇦 Ukraine (Kyiv)", "185.233.116.48", "90ms"},
-                  {"🇧🇷 Brazil (Sao Paulo)", "177.54.148.22", "165ms"},
-                  {"🇦🇷 Argentina (Buenos Aires)", "190.210.180.14", "178ms"},
-                  {"🇲🇽 Mexico (Mexico City)", "187.188.164.51", "142ms"},
-                  {"🇨🇱 Chile (Santiago)", "200.73.112.38", "182ms"},
-                  {"🇨🇴 Colombia (Bogota)", "190.85.140.29", "158ms"},
-                  {"🇿🇦 South Africa (Johannesburg)", "196.244.192.63", "148ms"},
-                  {"🇪🇬 Egypt (Cairo)", "197.45.128.19", "89ms"},
-                  {"🇳🇬 Nigeria (Lagos)", "197.210.64.81", "154ms"},
-                  {"🇰🇪 Kenya (Nairobi)", "196.201.214.35", "136ms"},
-                  {"🇵🇰 Pakistan (Karachi)", "103.255.4.77", "46ms"},
-                  {"🇱🇰 Sri Lanka (Colombo)", "103.247.192.18", "39ms"},
-                  {"🇳🇵 Nepal (Kathmandu)", "103.69.124.52", "34ms"},
-                  {"🇮🇪 Ireland (Dublin)", "185.111.212.40", "96ms"},
-                  {"🇦🇹 Austria (Vienna)", "185.181.60.27", "95ms"},
-                  {"🇧🇪 Belgium (Brussels)", "185.162.248.16", "93ms"},
-                  {"🇵🇹 Portugal (Lisbon)", "185.113.140.61", "107ms"},
-                  {"🇬🇷 Greece (Athens)", "185.138.42.84", "86ms"},
-                  {"🇷🇴 Romania (Bucharest)", "185.146.84.23", "87ms"},
-                  {"🇨🇿 Czech Republic (Prague)", "185.184.252.49", "94ms"}
+                  {"🇧🇩", "Bangladesh", "103.108.140.15", "18ms"},
+                  {"🇮🇳", "India (Mumbai)", "103.21.244.8", "24ms"},
+                  {"🇮🇳", "India (New Delhi)", "103.224.241.19", "29ms"},
+                  {"🇸🇬", "Singapore", "172.67.182.9", "32ms"},
+                  {"🇺🇸", "United States", "185.23.12.163", "85ms"},
+                  {"🇺🇸", "USA (Los Angeles)", "172.67.140.33", "115ms"},
+                  {"🇬🇧", "United Kingdom", "172.64.155.20", "95ms"},
+                  {"🇩🇪", "Germany", "188.114.96.3", "92ms"},
+                  {"🇯🇵", "Japan", "104.26.10.78", "68ms"},
+                  {"🇰🇷", "South Korea", "175.45.176.12", "72ms"},
+                  {"🇦🇪", "UAE (Dubai)", "185.151.204.10", "55ms"},
+                  {"🇸🇦", "Saudi Arabia", "212.138.112.44", "62ms"},
+                  {"🇶🇦", "Qatar", "178.152.200.18", "58ms"},
+                  {"🇲🇾", "Malaysia", "103.6.196.21", "38ms"},
+                  {"🇮🇩", "Indonesia", "103.147.154.9", "44ms"},
+                  {"🇹🇭", "Thailand", "103.253.72.14", "41ms"},
+                  {"🇻🇳", "Vietnam", "103.1.238.55", "47ms"},
+                  {"🇵🇭", "Philippines", "103.106.168.12", "53ms"},
+                  {"🇭🇰", "Hong Kong", "103.243.176.90", "45ms"},
+                  {"🇹🇼", "Taiwan", "103.124.72.31", "49ms"},
+                  {"🇨🇦", "Canada", "192.99.148.66", "115ms"},
+                  {"🇦🇺", "Australia", "103.246.250.11", "88ms"},
+                  {"🇳🇿", "New Zealand", "103.231.90.42", "96ms"},
+                  {"🇫🇷", "France", "185.16.44.71", "94ms"},
+                  {"🇳🇱", "Netherlands", "185.107.56.88", "91ms"},
+                  {"🇨🇭", "Switzerland", "185.156.46.19", "97ms"},
+                  {"🇮🇹", "Italy", "185.229.236.50", "99ms"},
+                  {"🇪🇸", "Spain", "185.253.152.33", "103ms"},
+                  {"🇸🇪", "Sweden", "185.213.154.67", "105ms"},
+                  {"🇳🇴", "Norway", "185.125.168.24", "108ms"},
+                  {"🇫🇮", "Finland", "95.216.144.82", "104ms"},
+                  {"🇩🇰", "Denmark", "185.10.220.15", "101ms"},
+                  {"🇵🇱", "Poland", "185.208.164.39", "98ms"},
+                  {"🇹🇷", "Turkey", "185.122.202.74", "78ms"},
+                  {"🇷🇺", "Russia", "185.177.94.12", "85ms"},
+                  {"🇺🇦", "Ukraine", "185.233.116.48", "90ms"},
+                  {"🇧🇷", "Brazil", "177.54.148.22", "165ms"},
+                  {"🇦🇷", "Argentina", "190.210.180.14", "178ms"},
+                  {"🇲🇽", "Mexico", "187.188.164.51", "142ms"},
+                  {"🇨🇱", "Chile", "200.73.112.38", "182ms"},
+                  {"🇨🇴", "Colombia", "190.85.140.29", "158ms"},
+                  {"🇿🇦", "South Africa", "196.244.192.63", "148ms"},
+                  {"🇪🇬", "Egypt", "197.45.128.19", "89ms"},
+                  {"🇳🇬", "Nigeria", "197.210.64.81", "154ms"},
+                  {"🇰🇪", "Kenya", "196.201.214.35", "136ms"},
+                  {"🇵🇰", "Pakistan", "103.255.4.77", "46ms"},
+                  {"🇱🇰", "Sri Lanka", "103.247.192.18", "39ms"},
+                  {"🇳🇵", "Nepal", "103.69.124.52", "34ms"},
+                  {"🇮🇪", "Ireland", "185.111.212.40", "96ms"},
+                  {"🇦🇹", "Austria", "185.181.60.27", "95ms"},
+                  {"🇧🇪", "Belgium", "185.162.248.16", "93ms"},
+                  {"🇵🇹", "Portugal", "185.113.140.61", "107ms"},
+                  {"🇬🇷", "Greece", "185.138.42.84", "86ms"},
+                  {"🇷🇴", "Romania", "185.146.84.23", "87ms"},
+                  {"🇨🇿", "Czech Republic", "185.184.252.49", "94ms"}
               };
               private int selectedServerIndex = 0;
 
@@ -557,10 +839,15 @@ jobs:
                   tvStatus = findViewById(R.id.tvStatus);
                   tvTimer = findViewById(R.id.tvTimer);
                   tvDownloadSpeed = findViewById(R.id.tvDownloadSpeed);
+                  tvDownloadUnit = findViewById(R.id.tvDownloadUnit);
                   tvUploadSpeed = findViewById(R.id.tvUploadSpeed);
+                  tvUploadUnit = findViewById(R.id.tvUploadUnit);
+                  tvFlag = findViewById(R.id.tvFlag);
                   tvServerName = findViewById(R.id.tvServerName);
                   tvServerIp = findViewById(R.id.tvServerIp);
                   tvPing = findViewById(R.id.tvPing);
+                  tvConnectLabel = findViewById(R.id.tvConnectLabel);
+                  viewGlowHalo = findViewById(R.id.viewGlowHalo);
 
                   btnConnect = findViewById(R.id.btnConnect);
                   btnAdBlock = findViewById(R.id.btnAdBlock);
@@ -570,7 +857,7 @@ jobs:
                   navSpeed = findViewById(R.id.navSpeed);
                   LinearLayout serverSelectorCard = findViewById(R.id.serverSelectorCard);
 
-                  updateFeatureButtons();
+                  updateFeatureIcons();
                   updateServerDisplay();
 
                   btnConnect.setOnClickListener(v -> {
@@ -592,15 +879,15 @@ jobs:
                   btnAdBlock.setOnClickListener(v -> {
                       boolean current = prefs.getBoolean("adblock", true);
                       prefs.edit().putBoolean("adblock", !current).apply();
-                      updateFeatureButtons();
-                      Toast.makeText(this, !current ? "AdGuard Ad-Blocker Enabled" : "Standard Cloudflare DNS Enabled", Toast.LENGTH_SHORT).show();
+                      updateFeatureIcons();
+                      Toast.makeText(this, !current ? "VIP AdGuard Ad-Blocker: ON" : "Ad-Blocker: OFF", Toast.LENGTH_SHORT).show();
                   });
 
                   navKillSwitch.setOnClickListener(v -> {
                       boolean current = prefs.getBoolean("killswitch", false);
                       prefs.edit().putBoolean("killswitch", !current).apply();
-                      updateFeatureButtons();
-                      Toast.makeText(this, !current ? "Kill Switch Activated" : "Kill Switch Off", Toast.LENGTH_SHORT).show();
+                      updateFeatureIcons();
+                      Toast.makeText(this, !current ? "Kill Switch: ON" : "Kill Switch: OFF", Toast.LENGTH_SHORT).show();
                   });
 
                   btnSplitTunnel.setOnClickListener(v -> showSplitTunnelDialog());
@@ -608,9 +895,9 @@ jobs:
                   navServers.setOnClickListener(v -> showServerDialog());
 
                   navSpeed.setOnClickListener(v -> {
-                      int randomPing = 16 + new Random().nextInt(35);
-                      tvPing.setText("📶 " + randomPing + "ms  >");
-                      Toast.makeText(this, "Ping Refreshed: " + randomPing + "ms", Toast.LENGTH_SHORT).show();
+                      int randomPing = 16 + new Random().nextInt(32);
+                      tvPing.setText(randomPing + "ms");
+                      Toast.makeText(this, "Fastest Ping: " + randomPing + "ms", Toast.LENGTH_SHORT).show();
                   });
 
                   lastRxBytes = TrafficStats.getTotalRxBytes();
@@ -621,14 +908,13 @@ jobs:
               private void showServerDialog() {
                   String[] names = new String[serverList.length];
                   for (int i = 0; i < serverList.length; i++) {
-                      names[i] = serverList[i][0] + "  (" + serverList[i][2] + ")";
+                      names[i] = serverList[i][0] + "  " + serverList[i][1] + "  (" + serverList[i][3] + ")";
                   }
                   new AlertDialog.Builder(this)
                       .setTitle("Select Server (55 Countries)")
                       .setItems(names, (dialog, which) -> {
                           selectedServerIndex = which;
                           updateServerDisplay();
-                          Toast.makeText(this, "Selected: " + serverList[which][0], Toast.LENGTH_SHORT).show();
                       })
                       .show();
               }
@@ -660,24 +946,24 @@ jobs:
                       })
                       .setPositiveButton("Save", (dialog, which) -> {
                           prefs.edit().putStringSet("bypassed_apps", bypassed).apply();
-                          Toast.makeText(this, "Split Tunneling Saved!", Toast.LENGTH_SHORT).show();
+                          Toast.makeText(this, "Split Tunneling Updated!", Toast.LENGTH_SHORT).show();
                       })
                       .setNegativeButton("Cancel", null)
                       .show();
               }
 
               private void updateServerDisplay() {
-                  tvServerName.setText(serverList[selectedServerIndex][0]);
-                  tvServerIp.setText("IP: " + serverList[selectedServerIndex][1]);
-                  tvPing.setText("📶 " + serverList[selectedServerIndex][2] + "  >");
+                  tvFlag.setText(serverList[selectedServerIndex][0]);
+                  tvServerName.setText(serverList[selectedServerIndex][1]);
+                  tvServerIp.setText("IP: " + serverList[selectedServerIndex][2]);
+                  tvPing.setText(serverList[selectedServerIndex][3]);
               }
 
-              private void updateFeatureButtons() {
+              private void updateFeatureIcons() {
                   boolean adBlock = prefs.getBoolean("adblock", true);
                   boolean killSwitch = prefs.getBoolean("killswitch", false);
-                  btnAdBlock.setText(adBlock ? "👑 AdBlock: ON" : "👑 AdBlock: OFF");
-                  navKillSwitch.setText(killSwitch ? "🛡 Kill: ON" : "🛡 Kill: OFF");
-                  navKillSwitch.setTextColor(killSwitch ? Color.parseColor("#4ADE80") : Color.parseColor("#94A3B8"));
+                  btnAdBlock.setAlpha(adBlock ? 1.0f : 0.4f);
+                  navKillSwitch.setBackgroundResource(killSwitch ? R.drawable.bg_circle_active : R.drawable.bg_circle_icon);
               }
 
               @Override
@@ -693,13 +979,13 @@ jobs:
               private void updateUIState(boolean connected) {
                   if (connected) {
                       tvStatus.setText("Connected");
-                      tvStatus.setTextColor(Color.parseColor("#4ADE80"));
-                      btnConnect.setText("⏻\nDISCONNECT");
+                      tvConnectLabel.setText("Disconnect");
+                      viewGlowHalo.setAlpha(1.0f);
                   } else {
                       tvStatus.setText("Disconnected");
-                      tvStatus.setTextColor(Color.parseColor("#F8FAFC"));
-                      btnConnect.setText("⏻\nCONNECT");
-                      tvTimer.setText("00:00:00");
+                      tvConnectLabel.setText("Connect");
+                      viewGlowHalo.setAlpha(0.45f);
+                      tvTimer.setText("00.00.00");
                   }
               }
 
@@ -714,8 +1000,8 @@ jobs:
                       lastRxBytes = currentRx;
                       lastTxBytes = currentTx;
 
-                      tvDownloadSpeed.setText(formatSpeed(rxSpeed));
-                      tvUploadSpeed.setText(formatSpeed(txSpeed));
+                      updateSpeedText(rxSpeed, tvDownloadSpeed, tvDownloadUnit);
+                      updateSpeedText(txSpeed, tvUploadSpeed, tvUploadUnit);
 
                       if (NexusVpnService.isRunning && NexusVpnService.startTimeMillis > 0) {
                           updateUIState(true);
@@ -723,17 +1009,19 @@ jobs:
                           long hrs = elapsed / 3600;
                           long mins = (elapsed % 3600) / 60;
                           long secs = elapsed % 60;
-                          tvTimer.setText(String.format(Locale.US, "%02d:%02d:%02d", hrs, mins, secs));
+                          tvTimer.setText(String.format(Locale.US, "%02d.%02d.%02d", hrs, mins, secs));
                       }
                       handler.postDelayed(this, 1000);
                   }
               };
 
-              private String formatSpeed(long bytesPerSec) {
+              private void updateSpeedText(long bytesPerSec, TextView numView, TextView unitView) {
                   if (bytesPerSec >= 1024 * 1024) {
-                      return String.format(Locale.US, "%.2f MB/s", bytesPerSec / (1024.0 * 1024.0));
+                      numView.setText(String.format(Locale.US, "%.2f", bytesPerSec / (1024.0 * 1024.0)));
+                      unitView.setText(" MB/S");
                   } else {
-                      return String.format(Locale.US, "%.1f KB/s", bytesPerSec / 1024.0);
+                      numView.setText(String.format(Locale.US, "%.2f", bytesPerSec / 1024.0));
+                      unitView.setText(" KB/S");
                   }
               }
           }
